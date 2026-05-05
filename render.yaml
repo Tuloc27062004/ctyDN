@@ -57,6 +57,8 @@ services:
         generateValue: true
       - key: NEXTAUTH_URL
         value: https://admin-frontend.onrender.com
+      - key: AUTH_URL
+        value: https://admin-frontend.onrender.com
       - key: APPROVED_ACCOUNT_URL
         value: https://newpot-frontend.onrender.com
       - key: DATABASE_URL
