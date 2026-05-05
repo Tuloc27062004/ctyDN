@@ -2,6 +2,7 @@ services:
   - type: web
     name: newpot-backend
     runtime: node
+    plan: free
     rootDir: newpot-hbny-be-main
     buildCommand: npm run build
     startCommand: npm run start:prod
@@ -26,6 +27,7 @@ services:
   - type: web
     name: newpot-frontend
     runtime: node
+    plan: free
     rootDir: newpot-hbny-main
     buildCommand: npm run build
     startCommand: npm start
@@ -36,6 +38,7 @@ services:
   - type: web
     name: admin-frontend
     runtime: node
+    plan: free
     rootDir: admin-main
     buildCommand: npm run build
     startCommand: npm start
@@ -63,4 +66,4 @@ databases:
   - name: newpot-db
     databaseName: newpot
     user: newpot_user
-    plan: basic-256mb
+    plan: free
