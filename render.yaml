@@ -39,9 +39,3 @@ databases:
     databaseName: admin
     user: admin_user
     plan: starter
-    startCommand: npm start
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        value: https://newpot-backend.onrender.com
-      - key: DATABASE_URL
-        fromSecret: database_url
