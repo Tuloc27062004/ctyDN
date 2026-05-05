@@ -9,13 +9,12 @@ from psycopg2.extras import RealDictCursor
 # =========================================================
 # CONFIG
 # =========================================================
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "",
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is required")
 
-ADMIN_EMAIL = "nguyenngoctrongtin@gmail.com"
-ADMIN_PASSWORD = "nguyenngoctrongtin123@"
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change-me")
 
 # Change these if you want
 ADMIN_FULL_NAME = "Admin"
