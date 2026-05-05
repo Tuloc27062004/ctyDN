@@ -1,41 +1,66 @@
 services:
   - type: web
     name: newpot-backend
-    source: ./newpot-hbny-be-main
+    runtime: node
+    rootDir: newpot-hbny-be-main
     buildCommand: npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
+      - key: FRONTEND_URL
+        value: https://newpot-frontend.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
       - key: DATABASE_URL
-        fromDatabase: newpot-db
+        fromDatabase:
+          name: newpot-db
+          property: connectionString
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
 
   - type: web
     name: newpot-frontend
-    source: ./newpot-hbny-main
+    runtime: node
+    rootDir: newpot-hbny-main
     buildCommand: npm run build
     startCommand: npm start
     envVars:
-      - key: NEXT_PUBLIC_API_URL
+      - key: NEXT_PUBLIC_API_BASE_URL
         value: https://newpot-backend.onrender.com
 
   - type: web
     name: admin-frontend
-    source: ./admin-main
+    runtime: node
+    rootDir: admin-main
     buildCommand: npm run build
     startCommand: npm start
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: NEXT_PUBLIC_API_URL
         value: https://newpot-backend.onrender.com
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        value: https://admin-frontend.onrender.com
+      - key: APPROVED_ACCOUNT_URL
+        value: https://newpot-frontend.onrender.com
       - key: DATABASE_URL
-        fromDatabase: admin-db
+        fromDatabase:
+          name: newpot-db
+          property: connectionString
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
 
 databases:
   - name: newpot-db
     databaseName: newpot
     user: newpot_user
-    plan: starter
-  - name: admin-db
-    databaseName: admin
-    user: admin_user
-    plan: starter
+    plan: basic-256mb
