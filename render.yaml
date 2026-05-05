@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: newpot-hbny-be-main
-    buildCommand: npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
@@ -27,7 +27,7 @@ services:
     runtime: node
     plan: free
     rootDir: newpot-hbny-main
-    buildCommand: npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
@@ -38,7 +38,7 @@ services:
     runtime: node
     plan: free
     rootDir: admin-main
-    buildCommand: npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
