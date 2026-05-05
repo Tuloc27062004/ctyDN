@@ -12,9 +12,9 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
 
-    "start:prod": "node dist/src/main",
+    "start:prod": "prisma migrate deploy --config prisma/prisma.config.ts && node dist/src/main",
     "db:generate": "prisma generate",
-    "db:deploy": "prisma migrate deploy",
+    "db:deploy": "prisma migrate deploy --config prisma/prisma.config.ts",
     "db:status": "prisma migrate status",
     "db:pull": "prisma db pull",
     "db:push": "prisma db push",
