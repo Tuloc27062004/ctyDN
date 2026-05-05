@@ -3,4 +3,16 @@ function __validateEnvVariable(variable: string | undefined, name: string): stri
 
   return variable;
 }
-export const apiBaseURL = __validateEnvVariable(process.env.NEXT_PUBLIC_API_BASE_URL, "NEXT_PUBLIC_API_BASE_URL");
+
+function normalizeApiBaseURL(url: string): string {
+  const trimmedUrl = url.replace(/\/+$/, "");
+
+  return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
+}
+
+export const apiBaseURL = normalizeApiBaseURL(
+  __validateEnvVariable(
+    process.env.NEXT_PUBLIC_API_BASE_URL,
+    "NEXT_PUBLIC_API_BASE_URL",
+  ),
+);
