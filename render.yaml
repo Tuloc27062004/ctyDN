@@ -16,9 +16,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: DATABASE_URL
-        fromDatabase:
-          name: newpot-db
-          property: connectionString
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: MAIL_FROM
@@ -54,16 +52,8 @@ services:
       - key: APPROVED_ACCOUNT_URL
         value: https://newpot-frontend.onrender.com
       - key: DATABASE_URL
-        fromDatabase:
-          name: newpot-db
-          property: connectionString
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM_EMAIL
         sync: false
-
-databases:
-  - name: newpot-db
-    databaseName: newpot
-    user: newpot_user
-    plan: free
