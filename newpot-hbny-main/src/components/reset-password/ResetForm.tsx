@@ -1,0 +1,93 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
+interface ResetPasswordFormProps {
+  token: string;
+  onSubmit: (data: { email: string; password: string; token: string }) => Promise<void>;
+  isLoading: boolean;
+}
+
+export function ResetPasswordForm({ token, onSubmit, isLoading }: ResetPasswordFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<any>({});
+
+  const validate = () => {
+    const newErrors: any = {};
+    if (!email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Invalid email address";
+    if (!password) newErrors.password = "Password is required";
+    if (!confirmPassword)
+      newErrors.confirmPassword = "Please confirm password";
+    if (password !== confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = validate();
+    setErrors(err);
+    if (Object.keys(err).length === 0) {
+      await onSubmit({ email, password, token });
+    }
+  };
+
+  return (
+    <div className="p-10">
+          <h2 className="text-3xl font-semibold mb-2">Welcome back</h2>
+          <p className="text-gray-500 mb-8">
+            Reset your EcoCrete account password
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* ...existing code for form fields and error messages... */}
+            <div>
+              <label className="text-sm text-gray-600">Email (*)</label>
+              <input
+                type="email"
+                className={`w-full mt-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 ${errors.email ? 'border-red-500' : ''}`}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Password (*)</label>
+              <input
+                type="password"
+                className={`w-full mt-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 ${errors.password ? 'border-red-500' : ''}`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Confirm Password (*)</label>
+              <input
+                type="password"
+                className={`w-full mt-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-green-700 text-white font-semibold py-3 rounded-lg hover:bg-green-800 transition"
+              disabled={isLoading}
+            >
+              Reset Password
+            </button>
+          </form>
+          <p className="text-sm text-gray-500 mt-6">
+            Remember your password?{" "}
+            <Link href="/sign-in" className="text-green-700 font-medium">
+              Sign in
+            </Link>
+          </p>
+        </div>
+  );
+}

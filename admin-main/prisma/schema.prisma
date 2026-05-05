@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  PENDING
+  ACCEPTED
+  VERIFIED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum Model3DStatus {
+  DRAFT
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum Model3DProvider {
+  TRIPO
+}
+
+model User {
+  id             String     @id @default(cuid())
+  fullName       String
+  email          String     @unique
+  phone          String
+  country        String?
+  companyName    String?
+  companyAddress String?
+  password       String
+  role           Role
+  status         UserStatus
+  isActive       Boolean    @default(true)
+  verifyToken    String?
+  verifyTokenExp DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  cartItems CartItem[]
+  orders    Order[]
+  blogPosts BlogPost[] @relation("BlogPostAuthor")
+
+  @@index([status])
+  @@index([isActive])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products         ProductCategory[]
+  categoryPatterns CategoryPattern[]
+  categoryColors   CategoryColor[]
+
+  @@index([isActive])
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  description      String
+  isActive         Boolean  @default(true)
+  minPrice         Float?
+  maxPrice         Float?
+  priority         Int      @default(0)
+  defaultPatternId String?
+  defaultColorId   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  defaultPattern  Pattern?              @relation("ProductDefaultPattern", fields: [defaultPatternId], references: [id], onDelete: SetNull)
+  defaultColor    Color?                @relation("ProductDefaultColor", fields: [defaultColorId], references: [id], onDelete: SetNull)
+  images          Image[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  categories      ProductCategory[]
+  productPatterns ProductPattern[]
+  productColors   ProductColor[]
+  renderAssets    ProductRenderAsset[]
+  models3d        Product3DModel[]
+
+  @@index([priority])
+  @@index([isActive])
+  @@index([defaultPatternId])
+  @@index([defaultColorId])
+}
+
+model Pattern {
+  id               String   @id @default(cuid())
+  name             String
+  code             String   @unique
+  textureUrl       String
+  defaultScale     Float    @default(1)
+  defaultOpacity   Float    @default(1)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  productPatterns    ProductPattern[]
+  categoryPatterns   CategoryPattern[]
+  defaultForProducts Product[]    @relation("ProductDefaultPattern")
+  cartItems          CartItem[]   @relation("CartItemPattern")
+  orderItems         OrderItem[]  @relation("OrderItemPattern")
+
+  @@index([isActive])
+}
+
+model Color {
+  id                 String   @id @default(cuid())
+  name               String
+  code               String   @unique
+  hex                String
+  swatchUrl          String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  productColors      ProductColor[]
+  categoryColors     CategoryColor[]
+  defaultForProducts Product[]    @relation("ProductDefaultColor")
+  cartItems          CartItem[]   @relation("CartItemColor")
+  orderItems         OrderItem[]  @relation("OrderItemColor")
+
+  @@index([isActive])
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model ProductPattern {
+  productId String
+  patternId String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pattern Pattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@id([productId, patternId])
+  @@index([patternId])
+}
+
+model ProductColor {
+  productId String
+  colorId   String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color   Color   @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@id([productId, colorId])
+  @@index([colorId])
+}
+
+model CategoryPattern {
+  categoryId String
+  patternId  String
+  createdAt  DateTime @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  pattern  Pattern  @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, patternId])
+  @@index([categoryId])
+  @@index([patternId])
+}
+
+model CategoryColor {
+  categoryId String
+  colorId    String
+  createdAt  DateTime @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  color    Color    @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, colorId])
+  @@index([categoryId])
+  @@index([colorId])
+}
+
+model ProductRenderAsset {
+  id                String   @id @default(cuid())
+  productId         String
+  viewCode          String   @default("front")
+  baseImageUrl      String
+  maskImageUrl      String
+  shadowImageUrl    String
+  highlightImageUrl String
+  width             Int?
+  height            Int?
+  isDefault         Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, isDefault])
+}
+
+model Product3DModel {
+  id               String          @id @default(cuid())
+  productId        String
+  provider         Model3DProvider @default(TRIPO)
+  status           Model3DStatus   @default(DRAFT)
+  sourceImageUrl   String
+  sourceImageName  String?
+  previewImageUrl  String?
+  tripoTaskId      String?
+  modelVersion     String?
+  faceLimit        Int?
+  textureEnabled   Boolean         @default(true)
+  pbrEnabled       Boolean         @default(true)
+  exportUv         Boolean         @default(true)
+  orientation      String?
+  textureAlignment String?
+  modelGlbUrl      String?
+  modelGlbPath     String?
+  baseModelGlbUrl  String?
+  baseModelGlbPath String?
+  pbrModelGlbUrl   String?
+  pbrModelGlbPath  String?
+  errorMessage     String?
+  isDefault        Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+
+  @@index([productId])
+  @@index([productId, isDefault])
+  @@index([productId, status])
+  @@index([tripoTaskId])
+}
+
+model Image {
+  id          String   @id @default(cuid())
+  url         String
+  description String
+  isRender    Boolean  @default(false)
+  productId   String
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, isRender])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  patternId String?
+  colorId   String?
+  model3dId String?
+  quantity  Int
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pattern Pattern?        @relation("CartItemPattern", fields: [patternId], references: [id], onDelete: SetNull)
+  color   Color?          @relation("CartItemColor", fields: [colorId], references: [id], onDelete: SetNull)
+  model3d Product3DModel? @relation(fields: [model3dId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, productId, patternId, colorId, model3dId])
+  @@index([userId])
+  @@index([productId])
+  @@index([patternId])
+  @@index([colorId])
+  @@index([model3dId])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  status    OrderStatus
+  note      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                        String  @id @default(cuid())
+  orderId                   String
+  productId                 String
+  patternId                 String?
+  colorId                   String?
+  quantity                  Int
+  patternNameSnapshot       String?
+  colorNameSnapshot         String?
+  previewImageSnapshot      String?
+  patternCodeSnapshot       String?
+  colorCodeSnapshot         String?
+  colorHexSnapshot          String?
+  model3dIdSnapshot         String?
+  modelPreviewImageSnapshot String?
+  modelGlbUrlSnapshot       String?
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pattern Pattern? @relation("OrderItemPattern", fields: [patternId], references: [id], onDelete: SetNull)
+  color   Color?   @relation("OrderItemColor", fields: [colorId], references: [id], onDelete: SetNull)
+
+  @@unique([orderId, productId, patternId, colorId, model3dIdSnapshot])
+  @@index([orderId])
+  @@index([productId])
+  @@index([patternId])
+  @@index([colorId])
+  @@index([model3dIdSnapshot])
+}
+
+model BlogPost {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  excerpt       String?
+  content       String?
+  coverImageUrl String?
+  isPublished   Boolean  @default(false)
+  publishedAt   DateTime?
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy User @relation("BlogPostAuthor", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([slug])
+  @@index([createdById])
+  @@index([isPublished])
+  @@index([publishedAt])
+}

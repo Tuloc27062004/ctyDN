@@ -1,0 +1,29 @@
+Modified files
+- prisma/schema.prisma
+- lib/validators.ts
+- components/admin/product-form.tsx
+- app/admin/products/new/page.tsx
+- app/admin/products/[id]/page.tsx
+- app/api/admin/products/route.ts
+- app/api/admin/products/[id]/route.ts
+- app/admin/categories/page.tsx
+- app/api/admin/categories/route.ts
+- app/api/admin/categories/[id]/route.ts
+- components/admin/sidebar.tsx
+
+New files
+- app/admin/patterns/page.tsx
+- app/admin/colors/page.tsx
+- app/api/admin/patterns/route.ts
+- app/api/admin/patterns/[id]/route.ts
+- app/api/admin/colors/route.ts
+- app/api/admin/colors/[id]/route.ts
+- app/api/admin/products/[id]/render-assets/route.ts
+- components/admin/product-render-assets-form.tsx
+- components/admin/product-pattern-selector.tsx
+- components/admin/product-color-selector.tsx
+- components/admin/category-option-rules-form.tsx
+- components/admin/product-preview-tester.tsx
+
+Helper output
+- pottery_configurator_admin_changes.md
