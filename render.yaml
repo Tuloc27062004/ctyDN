@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: newpot-hbny-be-main
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install --include=dev && npx prisma migrate deploy --config prisma/prisma.config.ts && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_VERSION
