@@ -37,7 +37,7 @@ export function ResetPasswordForm({ token, onSubmit, isLoading }: ResetPasswordF
   };
 
   return (
-    <div className="p-10">
+    <div className="p-6 sm:p-8 md:p-10">
           <h2 className="text-3xl font-semibold mb-2">Welcome back</h2>
           <p className="text-gray-500 mb-8">
             Reset your EcoCrete account password

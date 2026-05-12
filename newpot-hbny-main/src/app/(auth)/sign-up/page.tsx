@@ -60,7 +60,7 @@ export default function SignUpPage() {
     }
   };
     return (
-      <div className="h-screen bg-[#f7f7f7] flex items-center justify-center px-6 overflow-hidden relative">
+      <div className="min-h-screen bg-[#f7f7f7] flex items-start justify-center px-4 py-24 sm:px-6 md:h-screen md:items-center md:overflow-hidden md:py-0 relative">
         {/* Back to Home link */}
         <Link href="/" className="absolute top-6 left-6 text-green-700 font-medium flex items-center gap-1 hover:underline">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -69,7 +69,7 @@ export default function SignUpPage() {
           Back to Home
         </Link>
 
-        <div className="max-w-5xl w-full h-[60vh] grid md:grid-cols-2 bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="max-w-5xl w-full grid bg-white rounded-2xl shadow-lg overflow-hidden md:h-[60vh] md:grid-cols-2">
           {/* LEFT IMAGE (always full height) */}
           <div className="hidden md:block h-full">
             <img
@@ -79,7 +79,7 @@ export default function SignUpPage() {
             />
           </div>
           {/* RIGHT FORM (scrollable) */}
-          <div className="h-full overflow-y-auto p-10">
+          <div className="max-h-none overflow-visible p-6 sm:p-8 md:h-full md:overflow-y-auto md:p-10">
             <h2 className="text-3xl font-semibold mb-2">
               Create Account
             </h2>

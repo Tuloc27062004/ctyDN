@@ -44,7 +44,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
-        <aside className="border-r border-slate-200 bg-white">
+        <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
           <Sidebar />
         </aside>
 

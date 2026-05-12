@@ -38,16 +38,16 @@ export default function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 h-[110px] transition-all duration-300 md:h-auto ${
           scrolled
             ? "bg-white/95 backdrop-blur-md shadow-md"
             : "bg-white/75 backdrop-blur-sm shadow-sm"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto h-full max-w-7xl px-6 sm:px-6 lg:px-8">
           <div
-            className={`flex items-center justify-between transition-all duration-300 ${
-              scrolled ? "h-18" : "h-20"
+            className={`flex h-full items-center justify-between transition-all duration-300 ${
+              scrolled ? "md:h-18" : "md:h-20"
             }`}
           >
             <Link href="/" className="flex items-center">
@@ -107,7 +107,7 @@ export default function Header() {
 
             <div className="flex items-center space-x-4">
               {user ? (
-                <>
+                <div className="hidden items-center space-x-4 md:flex">
                   <span className="hidden lg:inline text-stone-700">
                     Welcome, <b>{user.fullName}</b>
                   </span>
@@ -119,9 +119,9 @@ export default function Header() {
                   >
                     {isLoggingOut ? "Logging out..." : "Log out"}
                   </button>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="hidden items-center space-x-4 md:flex">
                   <Link href="/sign-in">
                     <button className="text-sm font-medium border border-green-700 text-green-700 hover:bg-green-50 transition px-4 py-2 rounded-md">
                       Sign In
@@ -133,7 +133,7 @@ export default function Header() {
                       Sign Up
                     </button>
                   </Link>
-                </>
+                </div>
               )}
 
               <button
@@ -200,6 +200,35 @@ export default function Header() {
                     </Link>
                   </motion.div>
                 ))}
+
+                <div className="border-t border-stone-100 pt-3">
+                  {user ? (
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="w-full rounded-md border border-green-700 px-4 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 disabled:opacity-60"
+                    >
+                      {isLoggingOut ? "Logging out..." : "Log out"}
+                    </button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        href="/sign-in"
+                        className="rounded-md border border-green-700 px-4 py-2 text-center text-sm font-medium text-green-700 transition hover:bg-green-50"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/sign-up"
+                        className="rounded-md bg-green-700 px-4 py-2 text-center text-sm font-medium text-white shadow-sm transition hover:bg-green-800"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Sign Up
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </nav>
             </motion.div>
           )}

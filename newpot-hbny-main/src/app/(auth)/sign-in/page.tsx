@@ -30,7 +30,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] flex items-center justify-center px-6 relative">
+    <div className="min-h-screen bg-[#f7f7f7] flex items-start justify-center px-4 py-24 sm:px-6 md:items-center md:py-0 relative">
       {/* Back to Home link */}
       <Link href="/" className="absolute top-6 left-6 text-green-700 font-medium flex items-center gap-1 hover:underline">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -48,7 +48,7 @@ export default function SignInPage() {
           />
         </div>
         {/* FORM */}
-        <div className="p-10">
+        <div className="p-6 sm:p-8 md:p-10">
           <h2 className="text-3xl font-semibold mb-2">Welcome back</h2>
           <p className="text-gray-500 mb-8">
             Sign in to your EcoCrete account
@@ -83,7 +83,7 @@ export default function SignInPage() {
               Sign In
             </button>
           </form>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500 mt-6 ">
               Don't have an account?{" "}
               <Link href="/sign-up" className="text-green-700 font-medium">

@@ -115,9 +115,9 @@ export default function Hero() {
 
   if (slides.length === 0) {
     return (
-      <section className="relative h-screen w-full overflow-hidden bg-stone-900">
+      <section className="relative min-h-dvh w-full overflow-hidden bg-stone-900 pt-[110px] md:h-screen md:pt-0">
         <div className="absolute inset-0 bg-black/35" />
-        <div className="relative z-10 flex h-full items-center justify-center px-4 text-center">
+        <div className="relative z-10 flex min-h-[calc(100dvh-110px)] flex-col items-center px-6 pt-24 text-center md:h-full md:min-h-0 md:justify-center md:px-4 md:pt-0">
           <div className="max-w-4xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.25em] text-white/60 backdrop-blur-sm">
               Crafted for Green Living
@@ -139,7 +139,7 @@ export default function Hero() {
   const activeSlide = slides[currentSlide] ?? slides[0];
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section id="home" className="relative min-h-dvh w-full overflow-hidden pt-[110px] md:h-screen md:pt-0">
       {slides.map((slide, index) => (
         <div
           key={slide.thumbnail.id || index}
@@ -158,7 +158,7 @@ export default function Hero() {
         </div>
       ))}
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-110px)] w-full max-w-5xl flex-col items-center px-6 pt-24 text-center text-white md:h-full md:min-h-0 md:max-w-none md:justify-center md:px-4 md:pt-0">
         <div className="max-w-4xl">
           <AnimatePresence mode="wait">
             <motion.div
@@ -178,7 +178,7 @@ export default function Hero() {
               </motion.div>
 
               <motion.h1
-                className="mb-6 font-serif text-4xl font-light tracking-wide text-white md:text-6xl lg:text-7xl"
+                className="mb-6 font-serif text-[42px] font-light leading-tight tracking-wide text-white drop-shadow-md md:text-6xl lg:text-7xl"
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.12 }}
@@ -187,7 +187,7 @@ export default function Hero() {
               </motion.h1>
 
               <motion.p
-                className="mb-8 text-lg font-light tracking-wider text-white/90 md:text-xl"
+                className="mb-8 text-xl font-light tracking-wide text-white/90 md:text-xl md:tracking-wider"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.22 }}
@@ -196,20 +196,20 @@ export default function Hero() {
               </motion.p>
 
               <motion.div
-                className="space-x-4"
+                className="flex w-full max-w-2xl gap-4 md:block md:w-auto md:max-w-none md:space-x-4"
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.32 }}
               >
                 <a
                   href="#products"
-                  className="inline-block rounded-xl bg-white px-8 py-3 font-medium tracking-wide text-stone-800 shadow-md transition-colors duration-300 hover:bg-stone-100"
+                  className="flex-1 rounded-2xl bg-white px-6 py-5 text-center text-lg font-semibold tracking-wide text-stone-800 shadow-lg transition-colors duration-300 hover:bg-stone-100 md:inline-block md:flex-none md:rounded-xl md:px-8 md:py-3 md:text-base md:font-medium md:shadow-md"
                 >
                   Explore Collections
                 </a>
                 <a
                   href="#about"
-                  className="inline-block rounded-xl border border-white px-8 py-3 font-medium tracking-wide text-white transition-colors duration-300 hover:bg-white/10"
+                  className="flex-1 rounded-2xl border border-white/80 bg-white/10 px-6 py-5 text-center text-lg font-semibold tracking-wide text-white backdrop-blur-sm transition-colors duration-300 hover:bg-white/10 md:inline-block md:flex-none md:rounded-xl md:border-white md:bg-transparent md:px-8 md:py-3 md:text-base md:font-medium md:backdrop-blur-0"
                 >
                   Learn More
                 </a>

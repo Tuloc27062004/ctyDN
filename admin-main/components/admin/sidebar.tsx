@@ -31,18 +31,18 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="h-full border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-5 py-5">
+    <aside className="border-slate-200 bg-white lg:h-full lg:border-r">
+      <div className="hidden border-b border-slate-200 px-5 py-5 lg:block">
         <div className="text-lg font-semibold text-slate-800">Trang quản trị</div>
         <p className="mt-1 text-sm leading-6 text-slate-500">Chọn mục cần quản lý</p>
       </div>
 
-      <nav className="px-3 py-4">
-        <div className="mb-3 px-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+      <nav className="overflow-x-auto px-3 py-3 lg:overflow-visible lg:py-4">
+        <div className="mb-3 hidden px-2 text-sm font-medium uppercase tracking-wide text-slate-500 lg:block">
           Menu chính
         </div>
 
-        <div className="space-y-2">
+        <div className="flex gap-2 lg:block lg:space-y-2">
           {items.map((it) => {
             const active = it.exact
               ? pathname === it.href
@@ -55,7 +55,7 @@ export function Sidebar() {
                 key={it.href}
                 href={it.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors",
+                  "flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:gap-3 lg:px-4 lg:py-3 lg:text-base",
                   active
                     ? "bg-slate-100 text-slate-900"
                     : "text-slate-700 hover:bg-slate-50"
