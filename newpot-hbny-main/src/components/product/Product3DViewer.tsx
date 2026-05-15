@@ -290,6 +290,7 @@ export default function Product3DViewer({
   selectedPattern,
 }: Product3DViewerProps) {
   const [arOpen, setArOpen] = useState(false);
+  const [arQrUrl, setArQrUrl] = useState("");
 
   useEffect(() => {
     debugLog("Product3DViewer props changed", {
@@ -308,6 +309,19 @@ export default function Product3DViewer({
         : null,
     });
   }, [modelUrl, selectedColor, selectedPattern]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const shouldOpenAr = url.searchParams.get("ar") === "1";
+
+    url.searchParams.set("ar", "1");
+
+    setArQrUrl(url.toString());
+
+    if (shouldOpenAr) {
+      setArOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!arOpen) return;
@@ -404,7 +418,7 @@ export default function Product3DViewer({
           onClick={() => setArOpen(false)}
         >
           <div
-            className="m-auto grid h-[min(760px,100%)] w-[min(960px,100%)] grid-rows-[auto,1fr] overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="m-auto grid h-[min(760px,100%)] w-[min(1040px,100%)] grid-rows-[auto,1fr] overflow-hidden rounded-3xl bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-4 py-3">
@@ -427,49 +441,82 @@ export default function Product3DViewer({
               </button>
             </div>
 
-            <div className="min-h-0 bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)]">
-              {createElement(
-                "model-viewer",
-                {
-                  src: modelUrl,
-                  alt: "Product model in augmented reality",
-                  ar: true,
-                  "ar-modes": "webxr scene-viewer quick-look",
-                  "ar-placement": "floor",
-                  "ar-scale": "auto",
-                  "auto-rotate": true,
-                  "camera-controls": true,
-                  "camera-orbit": "35deg 70deg 3m",
-                  exposure: "0.9",
-                  "shadow-intensity": "1",
-                  "touch-action": "pan-y",
-                  style: {
-                    width: "100%",
-                    height: "100%",
-                    minHeight: "520px",
-                    background: "transparent",
-                  },
-                },
-                createElement(
-                  "button",
+            <div className="grid min-h-0 bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)] lg:grid-cols-[minmax(0,1fr),300px]">
+              <div className="min-h-0">
+                {createElement(
+                  "model-viewer",
                   {
-                    slot: "ar-button",
-                    type: "button",
-                    className:
-                      "absolute bottom-5 right-5 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-800",
+                    src: modelUrl,
+                    alt: "Product model in augmented reality",
+                    ar: true,
+                    "ar-modes": "webxr scene-viewer quick-look",
+                    "ar-placement": "floor",
+                    "ar-scale": "auto",
+                    "auto-rotate": true,
+                    "camera-controls": true,
+                    "camera-orbit": "35deg 70deg 3m",
+                    exposure: "0.9",
+                    "shadow-intensity": "1",
+                    "touch-action": "pan-y",
+                    style: {
+                      width: "100%",
+                      height: "100%",
+                      minHeight: "520px",
+                      background: "transparent",
+                    },
                   },
-                  "View in my room"
-                ),
-                createElement(
-                  "div",
-                  {
-                    slot: "ar-prompt",
-                    className:
-                      "absolute bottom-20 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-stone-900/85 px-4 py-3 text-center text-sm font-semibold text-white",
-                  },
-                  "Move your phone to scan the floor"
-                )
-              )}
+                  createElement(
+                    "button",
+                    {
+                      slot: "ar-button",
+                      type: "button",
+                      className:
+                        "absolute bottom-5 right-5 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-800",
+                    },
+                    "View in my room"
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      slot: "ar-prompt",
+                      className:
+                        "absolute bottom-20 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-stone-900/85 px-4 py-3 text-center text-sm font-semibold text-white",
+                    },
+                    "Move your phone to scan the floor"
+                  )
+                )}
+              </div>
+
+              <aside className="grid content-center gap-4 border-t border-stone-200 bg-white/92 p-5 lg:border-l lg:border-t-0">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    Open on phone
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-stone-600">
+                    Scan this QR code with a supported phone, then tap View in my room.
+                  </p>
+                </div>
+
+                {arQrUrl ? (
+                  <div className="grid place-items-center rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(
+                        arQrUrl
+                      )}`}
+                      alt="QR code to open product AR on a phone"
+                      className="h-60 w-60 max-w-full"
+                    />
+                  </div>
+                ) : null}
+
+                <input
+                  value={arQrUrl}
+                  readOnly
+                  className="h-11 rounded-xl border border-stone-300 bg-white px-3 text-xs text-stone-600"
+                  aria-label="AR product link"
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+              </aside>
             </div>
           </div>
         </div>
