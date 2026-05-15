@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import Script from "next/script";
+import { Suspense, createElement, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import {
@@ -288,6 +289,8 @@ export default function Product3DViewer({
   selectedColor,
   selectedPattern,
 }: Product3DViewerProps) {
+  const [arOpen, setArOpen] = useState(false);
+
   useEffect(() => {
     debugLog("Product3DViewer props changed", {
       modelUrl,
@@ -306,55 +309,171 @@ export default function Product3DViewer({
     });
   }, [modelUrl, selectedColor, selectedPattern]);
 
+  useEffect(() => {
+    if (!arOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setArOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [arOpen]);
+
   if (!modelUrl) {
     debugWarn("viewer rendered without modelUrl");
     return <ViewerFallback message="3D model is not available for this product yet." />;
   }
 
   return (
-    <div
-      data-protect-content="true"
-      className="overflow-hidden rounded-3xl border border-stone-200 bg-gradient-to-br from-stone-100 via-white to-stone-200 shadow-sm"
-      onContextMenu={(event) => event.preventDefault()}
-    >
-      <div className="flex items-center justify-between border-b border-stone-200 bg-white/80 px-4 py-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
-            3D Preview
-          </p>
-          <p className="mt-1 text-sm text-stone-600">
-            Orbit, zoom, and inspect the stored product model.
-          </p>
+    <>
+      <Script
+        id="google-model-viewer"
+        src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"
+        type="module"
+        strategy="afterInteractive"
+      />
+
+      <div
+        data-protect-content="true"
+        className="overflow-hidden rounded-3xl border border-stone-200 bg-gradient-to-br from-stone-100 via-white to-stone-200 shadow-sm"
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-stone-200 bg-white/80 px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
+              3D Preview
+            </p>
+            <p className="mt-1 text-sm text-stone-600">
+              Orbit, zoom, and inspect the stored product model.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right text-xs text-stone-500 sm:block">
+              <div>{selectedPattern?.name ?? "Default pattern"}</div>
+              <div>{selectedColor?.name ?? "Default color"}</div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setArOpen(true)}
+              className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-green-800"
+            >
+              AR
+            </button>
+          </div>
         </div>
 
-        <div className="hidden text-right text-xs text-stone-500 sm:block">
-          <div>{selectedPattern?.name ?? "Default pattern"}</div>
-          <div>{selectedColor?.name ?? "Default color"}</div>
-        </div>
-      </div>
+        <div className="aspect-square w-full bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)]">
+          <Canvas camera={{ position: [0, 0, 4], fov: 40 }}>
+            <color attach="background" args={["#f8f6f2"]} />
+            <ambientLight intensity={1.2} />
+            <directionalLight position={[4, 6, 6]} intensity={2.2} />
+            <directionalLight position={[-5, -2, -4]} intensity={0.6} />
 
-      <div className="aspect-square w-full bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)]">
-        <Canvas camera={{ position: [0, 0, 4], fov: 40 }}>
-          <color attach="background" args={["#f8f6f2"]} />
-          <ambientLight intensity={1.2} />
-          <directionalLight position={[4, 6, 6]} intensity={2.2} />
-          <directionalLight position={[-5, -2, -4]} intensity={0.6} />
+            <Suspense fallback={<LoadingOverlay />}>
+              <Product3DScene
+                modelUrl={modelUrl}
+                selectedColor={selectedColor}
+                selectedPattern={selectedPattern}
+              />
+            </Suspense>
 
-          <Suspense fallback={<LoadingOverlay />}>
-            <Product3DScene
-              modelUrl={modelUrl}
-              selectedColor={selectedColor}
-              selectedPattern={selectedPattern}
+            <OrbitControls
+              enablePan={false}
+              enableZoom={false}
+              autoRotate={false}
             />
-          </Suspense>
-
-          <OrbitControls
-            enablePan={false}
-            enableZoom={false}
-            autoRotate={false}
-          />
-        </Canvas>
+          </Canvas>
+        </div>
       </div>
-    </div>
+
+      {arOpen ? (
+        <div
+          className="fixed inset-0 z-50 grid bg-stone-950/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Product AR viewer"
+          onClick={() => setArOpen(false)}
+        >
+          <div
+            className="m-auto grid h-[min(760px,100%)] w-[min(960px,100%)] grid-rows-[auto,1fr] overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                  AR Preview
+                </p>
+                <p className="mt-1 text-sm text-stone-600">
+                  Use a supported phone to place this model in your room.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setArOpen(false)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-stone-300 text-xl leading-none text-stone-700 transition hover:bg-stone-50"
+                aria-label="Close AR viewer"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="min-h-0 bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)]">
+              {createElement(
+                "model-viewer",
+                {
+                  src: modelUrl,
+                  alt: "Product model in augmented reality",
+                  ar: true,
+                  "ar-modes": "webxr scene-viewer quick-look",
+                  "ar-placement": "floor",
+                  "ar-scale": "auto",
+                  "auto-rotate": true,
+                  "camera-controls": true,
+                  "camera-orbit": "35deg 70deg 3m",
+                  exposure: "0.9",
+                  "shadow-intensity": "1",
+                  "touch-action": "pan-y",
+                  style: {
+                    width: "100%",
+                    height: "100%",
+                    minHeight: "520px",
+                    background: "transparent",
+                  },
+                },
+                createElement(
+                  "button",
+                  {
+                    slot: "ar-button",
+                    type: "button",
+                    className:
+                      "absolute bottom-5 right-5 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-800",
+                  },
+                  "View in my room"
+                ),
+                createElement(
+                  "div",
+                  {
+                    slot: "ar-prompt",
+                    className:
+                      "absolute bottom-20 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-stone-900/85 px-4 py-3 text-center text-sm font-semibold text-white",
+                  },
+                  "Move your phone to scan the floor"
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
