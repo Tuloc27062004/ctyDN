@@ -13,6 +13,14 @@ function safeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Failed to upload file";
+}
+
 export async function POST(req: Request) {
   const guard = await requireAdmin();
 
@@ -61,9 +69,18 @@ export async function POST(req: Request) {
       url: blob.url,
       pathname: blob.pathname,
     });
-  } catch {
+  } catch (error) {
+    console.error("[api/uploads] Blob upload failed", {
+      pathname,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      hasBlobToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      error,
+    });
+
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: getErrorMessage(error) },
       { status: 500 }
     );
   }
