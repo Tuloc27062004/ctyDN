@@ -1,7 +1,6 @@
 "use client";
 
-import Script from "next/script";
-import { Suspense, createElement, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import {
@@ -347,13 +346,6 @@ export default function Product3DViewer({
 
   return (
     <>
-      <Script
-        id="google-model-viewer"
-        src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"
-        type="module"
-        strategy="afterInteractive"
-      />
-
       <div
         data-protect-content="true"
         className="overflow-hidden rounded-3xl border border-stone-200 bg-gradient-to-br from-stone-100 via-white to-stone-200 shadow-sm"
@@ -378,9 +370,9 @@ export default function Product3DViewer({
             <button
               type="button"
               onClick={() => setArOpen(true)}
-              className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-green-800"
+              className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-800"
             >
-              AR
+              Scan QR
             </button>
           </div>
         </div>
@@ -424,10 +416,10 @@ export default function Product3DViewer({
             <div className="flex items-center justify-between gap-4 border-b border-stone-200 px-4 py-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
-                  AR Preview
+                  Open AR on phone
                 </p>
                 <p className="mt-1 text-sm text-stone-600">
-                  Use a supported phone to place this model in your room.
+                  Scan the QR code with a supported phone.
                 </p>
               </div>
 
@@ -441,53 +433,8 @@ export default function Product3DViewer({
               </button>
             </div>
 
-            <div className="grid min-h-0 bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)] lg:grid-cols-[minmax(0,1fr),300px]">
-              <div className="min-h-0">
-                {createElement(
-                  "model-viewer",
-                  {
-                    src: modelUrl,
-                    alt: "Product model in augmented reality",
-                    ar: true,
-                    "ar-modes": "webxr scene-viewer quick-look",
-                    "ar-placement": "floor",
-                    "ar-scale": "auto",
-                    "auto-rotate": true,
-                    "camera-controls": true,
-                    "camera-orbit": "35deg 70deg 3m",
-                    exposure: "0.9",
-                    "shadow-intensity": "1",
-                    "touch-action": "pan-y",
-                    style: {
-                      width: "100%",
-                      height: "100%",
-                      minHeight: "520px",
-                      background: "transparent",
-                    },
-                  },
-                  createElement(
-                    "button",
-                    {
-                      slot: "ar-button",
-                      type: "button",
-                      className:
-                        "absolute bottom-5 right-5 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-800",
-                    },
-                    "View in my room"
-                  ),
-                  createElement(
-                    "div",
-                    {
-                      slot: "ar-prompt",
-                      className:
-                        "absolute bottom-20 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-stone-900/85 px-4 py-3 text-center text-sm font-semibold text-white",
-                    },
-                    "Move your phone to scan the floor"
-                  )
-                )}
-              </div>
-
-              <aside className="grid content-center gap-4 border-t border-stone-200 bg-white/92 p-5 lg:border-l lg:border-t-0">
+            <div className="grid min-h-0 place-items-center bg-[radial-gradient(circle_at_top,#ffffff,#e7e5e4)] p-5">
+              <aside className="grid w-full max-w-sm content-center gap-4 rounded-3xl border border-stone-200 bg-white/92 p-5 shadow-sm">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                     Open on phone
