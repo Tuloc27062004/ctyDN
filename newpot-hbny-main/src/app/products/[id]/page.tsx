@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import Header from "@/components/landing/Header";
@@ -55,6 +55,7 @@ function pickReady3DModel(
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
 
   const { product, isLoading } = useDetailedProduct(id);
@@ -64,9 +65,12 @@ export default function ProductDetailPage() {
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
 
   useEffect(() => {
-    setSelectedPatternId(null);
-    setSelectedColorId(null);
-  }, [product?.id]);
+    const patternId = searchParams.get("patternId");
+    const colorId = searchParams.get("colorId");
+
+    setSelectedPatternId(patternId || null);
+    setSelectedColorId(colorId || null);
+  }, [product?.id, searchParams]);
 
   const effectivePatternId = selectedPatternId;
   const effectiveColorId = selectedColorId;

@@ -4,6 +4,8 @@ import Script from "next/script";
 import { Suspense, createElement, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   Color,
   Material,
@@ -90,6 +92,115 @@ function clampOpacity(value: number | null | undefined): number {
 
 function safeRepeatScale(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+async function exportConfiguredModelBuffer(
+  modelUrl: string,
+  selectedColor?: ColorOption | null,
+  selectedPattern?: PatternOption | null
+) {
+  const loader = new GLTFLoader();
+  const gltf = await loader.loadAsync(modelUrl);
+  const scene = gltf.scene.clone(true);
+  const textureLoader = new TextureLoader();
+  textureLoader.setCrossOrigin("anonymous");
+
+  const patternTexture = selectedPattern?.textureUrl
+    ? await textureLoader.loadAsync(selectedPattern.textureUrl)
+    : null;
+
+  if (patternTexture) {
+    patternTexture.colorSpace = SRGBColorSpace;
+    patternTexture.wrapS = RepeatWrapping;
+    patternTexture.wrapT = RepeatWrapping;
+    const safeScale = safeRepeatScale(selectedPattern?.defaultScale);
+    patternTexture.repeat.set(safeScale, safeScale);
+    patternTexture.needsUpdate = true;
+  }
+
+  scene.traverse((child) => {
+    if (!(child instanceof Mesh)) return;
+
+    const sourceMaterials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+
+    const workingMaterials = sourceMaterials.map((sourceMaterial) => {
+      const material = sourceMaterial.clone() as DynamicMaterial;
+
+      if (material.color instanceof Color) {
+        if (selectedColor?.hex) {
+          material.color.set(selectedColor.hex);
+        } else if (patternTexture) {
+          material.color.set("#ffffff");
+        }
+      }
+
+      if ("map" in material && patternTexture) {
+        material.map = patternTexture;
+      }
+
+      if (material instanceof MeshStandardMaterial) {
+        const opacity = clampOpacity(selectedPattern?.defaultOpacity);
+        material.transparent = opacity < 1;
+        material.opacity = opacity;
+      }
+
+      material.needsUpdate = true;
+      return material;
+    });
+
+    child.material =
+      workingMaterials.length === 1 ? workingMaterials[0] : workingMaterials;
+  });
+
+  const exporter = new GLTFExporter();
+  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+    exporter.parse(
+      scene,
+      (result) => {
+        if (result instanceof ArrayBuffer) {
+          resolve(result);
+          return;
+        }
+
+        resolve(new TextEncoder().encode(JSON.stringify(result)).buffer);
+      },
+      reject,
+      { binary: true }
+    );
+  });
+
+  return arrayBuffer;
+}
+
+async function uploadConfiguredArModel(arrayBuffer: ArrayBuffer) {
+  const formData = new FormData();
+  formData.append(
+    "file",
+    new File([arrayBuffer], "configured-product.glb", {
+      type: "model/gltf-binary",
+    })
+  );
+
+  const res = await fetch("/api/ar-models", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = (await res.json().catch(() => null)) as { url?: unknown; error?: unknown } | null;
+
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === "string" ? data.error : "Failed to upload AR model"
+    );
+  }
+
+  if (!data || typeof data.url !== "string") {
+    throw new Error("AR model upload did not return a URL");
+  }
+
+  return data.url;
 }
 
 type Product3DSceneProps = Omit<Product3DViewerProps, "modelUrl"> & {
@@ -291,6 +402,9 @@ export default function Product3DViewer({
 }: Product3DViewerProps) {
   const [arOpen, setArOpen] = useState(false);
   const [arQrUrl, setArQrUrl] = useState("");
+  const [arModelUrl, setArModelUrl] = useState<string | null>(null);
+  const [arModelBusy, setArModelBusy] = useState(false);
+  const [arModelError, setArModelError] = useState<string | null>(null);
   const [showPhoneArViewer, setShowPhoneArViewer] = useState(false);
 
   useEffect(() => {
@@ -316,6 +430,17 @@ export default function Product3DViewer({
     const shouldOpenAr = url.searchParams.get("ar") === "1";
 
     url.searchParams.set("ar", "1");
+    if (selectedPattern?.id) {
+      url.searchParams.set("patternId", selectedPattern.id);
+    } else {
+      url.searchParams.delete("patternId");
+    }
+
+    if (selectedColor?.id) {
+      url.searchParams.set("colorId", selectedColor.id);
+    } else {
+      url.searchParams.delete("colorId");
+    }
 
     setArQrUrl(url.toString());
 
@@ -323,7 +448,35 @@ export default function Product3DViewer({
       setShowPhoneArViewer(true);
       setArOpen(true);
     }
-  }, []);
+  }, [selectedColor?.id, selectedPattern?.id]);
+
+  useEffect(() => {
+    if (!showPhoneArViewer || !modelUrl) return;
+
+    let cancelled = false;
+    setArModelBusy(true);
+    setArModelError(null);
+
+    exportConfiguredModelBuffer(modelUrl, selectedColor, selectedPattern)
+      .then((arrayBuffer) => uploadConfiguredArModel(arrayBuffer))
+      .then((publicUrl) => {
+        if (cancelled) return;
+        setArModelUrl(publicUrl);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        debugError("ar-export:failed", error);
+        setArModelUrl(null);
+        setArModelError("Could not prepare the configured AR model. Showing the original model instead.");
+      })
+      .finally(() => {
+        if (!cancelled) setArModelBusy(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [modelUrl, selectedColor, selectedPattern, showPhoneArViewer]);
 
   useEffect(() => {
     if (!arOpen) return;
@@ -451,11 +604,23 @@ export default function Product3DViewer({
                     strategy="afterInteractive"
                   />
 
-                  <div className="h-full min-h-[520px] w-full">
+                  <div className="relative h-full min-h-[520px] w-full">
+                    {arModelBusy ? (
+                      <div className="absolute left-1/2 top-24 z-10 -translate-x-1/2 rounded-full bg-white/95 px-4 py-2 text-sm font-medium text-stone-700 shadow-sm">
+                        Preparing selected color for AR...
+                      </div>
+                    ) : null}
+
+                    {arModelError ? (
+                      <div className="absolute left-1/2 top-24 z-10 w-[min(420px,calc(100%-32px))] -translate-x-1/2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 shadow-sm">
+                        {arModelError}
+                      </div>
+                    ) : null}
+
                     {createElement(
                       "model-viewer",
                       {
-                        src: modelUrl,
+                        src: arModelUrl || modelUrl,
                         alt: "Product model in augmented reality",
                         ar: true,
                         "ar-modes": "webxr scene-viewer quick-look",
