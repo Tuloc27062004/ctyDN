@@ -568,6 +568,21 @@ export default function Product3DViewer({
     return <ViewerFallback message="3D model is not available for this product yet." />;
   }
 
+  const openCameraAr = () => {
+    const viewer = document.getElementById(
+      "product-ar-model-viewer"
+    ) as ModelViewerElement | null;
+
+    if (!viewer?.activateAR) {
+      debugWarn("manual-ar:activateAR-unavailable");
+      return;
+    }
+
+    Promise.resolve(viewer.activateAR()).catch((error) => {
+      debugWarn("manual-ar:activation-blocked", error);
+    });
+  };
+
   return (
     <>
       <div
@@ -688,6 +703,7 @@ export default function Product3DViewer({
                     {createElement(
                       "model-viewer",
                       {
+                        id: "product-ar-model-viewer",
                         src: arModelUrl || modelUrl,
                         ref: modelViewerRef,
                         alt: "Product model in augmented reality",
@@ -713,10 +729,11 @@ export default function Product3DViewer({
                         {
                           slot: "ar-button",
                           type: "button",
+                          "aria-label": "Open camera AR",
                           className:
-                            "absolute bottom-5 right-5 rounded-full bg-green-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-800",
+                            "absolute bottom-5 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-green-700 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-green-800",
                         },
-                        "View in my room"
+                        "Open camera AR"
                       ),
                       createElement(
                         "div",
@@ -728,6 +745,14 @@ export default function Product3DViewer({
                         "Move your phone to scan the floor"
                       )
                     )}
+
+                    <button
+                      type="button"
+                      onClick={openCameraAr}
+                      className="absolute bottom-5 left-1/2 z-20 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-green-700 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-green-800"
+                    >
+                      Open camera AR
+                    </button>
                   </div>
                 </>
               ) : (
