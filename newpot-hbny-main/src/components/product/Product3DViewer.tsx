@@ -120,6 +120,26 @@ function isMobileOrTabletDevice() {
   return mobileUserAgent || iPadOSDesktopMode || tabletSizedTouchDevice;
 }
 
+function isZaloBrowser() {
+  return /Zalo/i.test(navigator.userAgent || "");
+}
+
+function openInSystemBrowser(targetUrl: string) {
+  const url = new URL(targetUrl);
+
+  if (/Android/i.test(navigator.userAgent || "")) {
+    window.location.href = `intent://${url.host}${url.pathname}${url.search}${url.hash}#Intent;scheme=${url.protocol.replace(
+      ":",
+      ""
+    )};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(
+      url.toString()
+    )};end`;
+    return;
+  }
+
+  window.open(url.toString(), "_blank", "noopener,noreferrer");
+}
+
 async function exportConfiguredModelBuffer(
   modelUrl: string,
   selectedColor?: ColorOption | null,
@@ -431,6 +451,7 @@ export default function Product3DViewer({
   const [arModelUrl, setArModelUrl] = useState<string | null>(null);
   const [arModelBusy, setArModelBusy] = useState(false);
   const [arModelError, setArModelError] = useState<string | null>(null);
+  const [arLaunchNotice, setArLaunchNotice] = useState<string | null>(null);
   const [showPhoneArViewer, setShowPhoneArViewer] = useState(false);
   const [autoArAttemptKey, setAutoArAttemptKey] = useState("");
   const modelViewerRef = useRef<ModelViewerElement | null>(null);
@@ -569,17 +590,29 @@ export default function Product3DViewer({
   }
 
   const openCameraAr = () => {
+    setArLaunchNotice(null);
+
+    if (isZaloBrowser()) {
+      setArLaunchNotice("Zalo may block AR camera. Opening this page in your phone browser...");
+      openInSystemBrowser(arQrUrl || window.location.href);
+      return;
+    }
+
     const viewer = document.getElementById(
       "product-ar-model-viewer"
     ) as ModelViewerElement | null;
 
     if (!viewer?.activateAR) {
       debugWarn("manual-ar:activateAR-unavailable");
+      setArLaunchNotice("AR camera is not available here. Please open this page in Chrome or Safari.");
+      openInSystemBrowser(arQrUrl || window.location.href);
       return;
     }
 
     Promise.resolve(viewer.activateAR()).catch((error) => {
       debugWarn("manual-ar:activation-blocked", error);
+      setArLaunchNotice("AR camera was blocked here. Please open this page in Chrome or Safari.");
+      openInSystemBrowser(arQrUrl || window.location.href);
     });
   };
 
@@ -662,7 +695,7 @@ export default function Product3DViewer({
                 </p>
                 <p className="mt-1 text-sm text-stone-600">
                   {showPhoneArViewer
-                    ? "Tap the AR button to place this model through your phone camera."
+                    ? "Tap View in my room to place this model through your phone camera."
                     : "Scan the QR code with a supported phone."}
                 </p>
               </div>
@@ -700,6 +733,12 @@ export default function Product3DViewer({
                       </div>
                     ) : null}
 
+                    {arLaunchNotice ? (
+                      <div className="absolute left-1/2 top-40 z-10 w-[min(420px,calc(100%-32px))] -translate-x-1/2 rounded-2xl border border-stone-200 bg-white/95 px-4 py-3 text-center text-sm text-stone-700 shadow-sm">
+                        {arLaunchNotice}
+                      </div>
+                    ) : null}
+
                     {createElement(
                       "model-viewer",
                       {
@@ -729,11 +768,11 @@ export default function Product3DViewer({
                         {
                           slot: "ar-button",
                           type: "button",
-                          "aria-label": "Open camera AR",
+                          "aria-label": "View in my room",
                           className:
                             "absolute bottom-5 left-1/2 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-green-700 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-green-800",
                         },
-                        "Open camera AR"
+                        "View in my room"
                       ),
                       createElement(
                         "div",
@@ -751,7 +790,7 @@ export default function Product3DViewer({
                       onClick={openCameraAr}
                       className="absolute bottom-5 left-1/2 z-20 w-[min(320px,calc(100%-32px))] -translate-x-1/2 rounded-full bg-green-700 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-green-800"
                     >
-                      Open camera AR
+                      View in my room
                     </button>
                   </div>
                 </>
