@@ -1,7 +1,14 @@
 "use client";
 
 import Script from "next/script";
-import { Suspense, createElement, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  createElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
@@ -36,6 +43,10 @@ type DynamicMaterial = Material & {
 type MeshSnapshot = {
   mesh: Mesh;
   originalMaterials: DynamicMaterial[];
+};
+
+type ModelViewerElement = HTMLElement & {
+  activateAR?: () => Promise<void> | void;
 };
 
 const DEBUG_3D = true;
@@ -92,6 +103,21 @@ function clampOpacity(value: number | null | undefined): number {
 
 function safeRepeatScale(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+function isMobileOrTabletDevice() {
+  const userAgent = navigator.userAgent || "";
+  const mobileUserAgent =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      userAgent
+    );
+  const iPadOSDesktopMode =
+    navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
+  const tabletSizedTouchDevice =
+    coarsePointer && Math.min(window.innerWidth, window.innerHeight) <= 1024;
+
+  return mobileUserAgent || iPadOSDesktopMode || tabletSizedTouchDevice;
 }
 
 async function exportConfiguredModelBuffer(
@@ -406,6 +432,8 @@ export default function Product3DViewer({
   const [arModelBusy, setArModelBusy] = useState(false);
   const [arModelError, setArModelError] = useState<string | null>(null);
   const [showPhoneArViewer, setShowPhoneArViewer] = useState(false);
+  const [autoArAttemptKey, setAutoArAttemptKey] = useState("");
+  const modelViewerRef = useRef<ModelViewerElement | null>(null);
 
   useEffect(() => {
     debugLog("Product3DViewer props changed", {
@@ -442,39 +470,47 @@ export default function Product3DViewer({
       url.searchParams.delete("colorId");
     }
 
-    setArQrUrl(url.toString());
+    const nextArQrUrl = url.toString();
+    const timer = window.setTimeout(() => {
+      setArQrUrl(nextArQrUrl);
 
-    if (shouldOpenAr) {
-      setShowPhoneArViewer(true);
-      setArOpen(true);
-    }
+      if (shouldOpenAr) {
+        setShowPhoneArViewer(true);
+        setArOpen(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [selectedColor?.id, selectedPattern?.id]);
 
   useEffect(() => {
     if (!showPhoneArViewer || !modelUrl) return;
 
     let cancelled = false;
-    setArModelBusy(true);
-    setArModelError(null);
+    const timer = window.setTimeout(() => {
+      setArModelBusy(true);
+      setArModelError(null);
 
-    exportConfiguredModelBuffer(modelUrl, selectedColor, selectedPattern)
-      .then((arrayBuffer) => uploadConfiguredArModel(arrayBuffer))
-      .then((publicUrl) => {
-        if (cancelled) return;
-        setArModelUrl(publicUrl);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        debugError("ar-export:failed", error);
-        setArModelUrl(null);
-        setArModelError("Could not prepare the configured AR model. Showing the original model instead.");
-      })
-      .finally(() => {
-        if (!cancelled) setArModelBusy(false);
-      });
+      exportConfiguredModelBuffer(modelUrl, selectedColor, selectedPattern)
+        .then((arrayBuffer) => uploadConfiguredArModel(arrayBuffer))
+        .then((publicUrl) => {
+          if (cancelled) return;
+          setArModelUrl(publicUrl);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          debugError("ar-export:failed", error);
+          setArModelUrl(null);
+          setArModelError("Could not prepare the configured AR model. Showing the original model instead.");
+        })
+        .finally(() => {
+          if (!cancelled) setArModelBusy(false);
+        });
+    }, 0);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [modelUrl, selectedColor, selectedPattern, showPhoneArViewer]);
 
@@ -494,6 +530,38 @@ export default function Product3DViewer({
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [arOpen]);
+
+  useEffect(() => {
+    const activeModelUrl = arModelUrl || modelUrl;
+    if (
+      !arOpen ||
+      !showPhoneArViewer ||
+      !activeModelUrl ||
+      arModelBusy ||
+      autoArAttemptKey === activeModelUrl
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const viewer = modelViewerRef.current;
+      if (!viewer?.activateAR) return;
+
+      setAutoArAttemptKey(activeModelUrl);
+      Promise.resolve(viewer.activateAR()).catch((error) => {
+        debugWarn("auto-ar:activation-blocked", error);
+      });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    arModelBusy,
+    arModelUrl,
+    arOpen,
+    autoArAttemptKey,
+    modelUrl,
+    showPhoneArViewer,
+  ]);
 
   if (!modelUrl) {
     debugWarn("viewer rendered without modelUrl");
@@ -526,7 +594,7 @@ export default function Product3DViewer({
             <button
               type="button"
               onClick={() => {
-                setShowPhoneArViewer(false);
+                setShowPhoneArViewer(isMobileOrTabletDevice());
                 setArOpen(true);
               }}
               className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-800"
@@ -621,6 +689,7 @@ export default function Product3DViewer({
                       "model-viewer",
                       {
                         src: arModelUrl || modelUrl,
+                        ref: modelViewerRef,
                         alt: "Product model in augmented reality",
                         ar: true,
                         "ar-modes": "webxr scene-viewer quick-look",
