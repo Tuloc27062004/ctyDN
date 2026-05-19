@@ -120,24 +120,43 @@ function isMobileOrTabletDevice() {
   return mobileUserAgent || iPadOSDesktopMode || tabletSizedTouchDevice;
 }
 
-function isZaloBrowser() {
-  return /Zalo/i.test(navigator.userAgent || "");
+function isInAppBrowser() {
+  return /Zalo|FBAN|FBAV|FB_IAB|FB4A|Messenger/i.test(
+    navigator.userAgent || ""
+  );
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent || "");
 }
 
 function openInSystemBrowser(targetUrl: string) {
-  const url = new URL(targetUrl);
+  const url = new URL(targetUrl, window.location.href);
+  const absoluteUrl = url.toString();
 
-  if (/Android/i.test(navigator.userAgent || "")) {
+  if (isAndroidDevice()) {
     window.location.href = `intent://${url.host}${url.pathname}${url.search}${url.hash}#Intent;scheme=${url.protocol.replace(
       ":",
       ""
-    )};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(
-      url.toString()
+    )};action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${encodeURIComponent(
+      absoluteUrl
     )};end`;
     return;
   }
 
-  window.open(url.toString(), "_blank", "noopener,noreferrer");
+  window.location.href = absoluteUrl;
+}
+
+function openAndroidSceneViewer(modelUrl: string, fallbackUrl: string) {
+  const sceneViewerUrl = new URL("https://arvr.google.com/scene-viewer/1.0");
+  sceneViewerUrl.searchParams.set("file", modelUrl);
+  sceneViewerUrl.searchParams.set("mode", "ar_preferred");
+  sceneViewerUrl.searchParams.set("title", "View in my room");
+
+  const fallback = new URL(fallbackUrl, window.location.href).toString();
+  window.location.href = `intent://arvr.google.com/scene-viewer/1.0${sceneViewerUrl.search}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${encodeURIComponent(
+    fallback
+  )};end`;
 }
 
 async function exportConfiguredModelBuffer(
@@ -591,10 +610,25 @@ export default function Product3DViewer({
 
   const openCameraAr = () => {
     setArLaunchNotice(null);
+    const targetUrl = new URL(window.location.href);
 
-    if (isZaloBrowser()) {
-      setArLaunchNotice("Zalo may block AR camera. Opening this page in your phone browser...");
-      openInSystemBrowser(arQrUrl || window.location.href);
+    targetUrl.searchParams.set("ar", "1");
+    if (selectedPattern?.id) {
+      targetUrl.searchParams.set("patternId", selectedPattern.id);
+    } else {
+      targetUrl.searchParams.delete("patternId");
+    }
+
+    if (selectedColor?.id) {
+      targetUrl.searchParams.set("colorId", selectedColor.id);
+    } else {
+      targetUrl.searchParams.delete("colorId");
+    }
+
+    const activeArModelUrl = arModelUrl || modelUrl;
+    if (isAndroidDevice() && activeArModelUrl) {
+      setArLaunchNotice("Opening AR camera...");
+      openAndroidSceneViewer(activeArModelUrl, targetUrl.toString());
       return;
     }
 
@@ -604,15 +638,23 @@ export default function Product3DViewer({
 
     if (!viewer?.activateAR) {
       debugWarn("manual-ar:activateAR-unavailable");
-      setArLaunchNotice("AR camera is not available here. Please open this page in Chrome or Safari.");
-      openInSystemBrowser(arQrUrl || window.location.href);
+      setArLaunchNotice(
+        isInAppBrowser()
+          ? "This app blocks AR camera. Please open this product in Safari."
+          : "AR camera is not available here. Please open this page in Chrome or Safari."
+      );
+      openInSystemBrowser(targetUrl.toString());
       return;
     }
 
     Promise.resolve(viewer.activateAR()).catch((error) => {
       debugWarn("manual-ar:activation-blocked", error);
-      setArLaunchNotice("AR camera was blocked here. Please open this page in Chrome or Safari.");
-      openInSystemBrowser(arQrUrl || window.location.href);
+      setArLaunchNotice(
+        isInAppBrowser()
+          ? "This app blocked AR camera. Please open this product in Safari."
+          : "AR camera was blocked here. Please open this page in Chrome or Safari."
+      );
+      openInSystemBrowser(targetUrl.toString());
     });
   };
 
@@ -642,7 +684,12 @@ export default function Product3DViewer({
             <button
               type="button"
               onClick={() => {
-                setShowPhoneArViewer(isMobileOrTabletDevice());
+                if (isMobileOrTabletDevice()) {
+                  openCameraAr();
+                  return;
+                }
+
+                setShowPhoneArViewer(false);
                 setArOpen(true);
               }}
               className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-800"
